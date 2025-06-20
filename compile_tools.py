@@ -43,32 +43,22 @@ def compile_kernel():
          'build/boot.o', 'build/kernel.o', 'build/string.o', 'build/vfs.o',
          'build/ext2.o', 'build/fat32.o', 'build/ntfs.o'])
 
-def make_iso():
-    os.makedirs('build/isofiles/boot/grub', exist_ok=True)
-    shutil.copy('build/kernel.bin', 'build/isofiles/boot/kernel.bin')
-    cfg = 'build/isofiles/boot/grub/grub.cfg'
-    with open(cfg, 'w') as f:
-        f.write('set timeout=0\n')
-        f.write('menuentry "OptrixOS" { multiboot /boot/kernel.bin }\n')
+def compile_bootloader(kernel_sectors):
+    args = [NASM, '-f', 'bin',
+            f'-DKERNEL_SECTORS={kernel_sectors}',
+            '-DKERNEL_LBA=1',
+            'src/bootloader.s', '-o', 'build/bootloader.bin']
+    run(args)
 
-    core_img = 'build/isofiles/boot/grub/core.img'
-    run(['grub-mkstandalone', '-O', 'i386-pc',
-         '--modules=biosdisk iso9660 normal multiboot',
-         '--locales=', '--fonts=', '--compress=xz',
-         '-o', core_img,
-         f'boot/grub/grub.cfg={cfg}'])
-
-    bios_img = 'build/isofiles/boot/grub/bios.img'
-    cdboot = '/usr/lib/grub/i386-pc/cdboot.img'
-    with open(bios_img, 'wb') as out:
-        for part in (cdboot, core_img):
-            with open(part, 'rb') as p:
-                out.write(p.read())
-
-    run(['xorriso', '-as', 'mkisofs', '-R', '-b', 'boot/grub/bios.img',
-         '-no-emul-boot', '-boot-load-size', '4', '-boot-info-table',
-         '-o', 'OptrixOS.iso', 'build/isofiles'])
+def make_image():
+    size = os.path.getsize('build/kernel.bin')
+    sectors = (size + 511) // 512
+    compile_bootloader(sectors)
+    with open('OptrixOS.img', 'wb') as out:
+        for f in ('build/bootloader.bin', 'build/kernel.bin'):
+            with open(f, 'rb') as inp:
+                out.write(inp.read())
 
 if __name__ == '__main__':
     compile_kernel()
-    make_iso()
+    make_image()
