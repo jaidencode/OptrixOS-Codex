@@ -50,6 +50,7 @@ $(BUILD):
 
 $(ISO): $(IMG)
 	genisoimage -quiet -o $@ -b $(IMG) -no-emul-boot -boot-load-size 4 -boot-info-table .
+	rm -f $(IMG)
 
 iso: $(ISO)
 	

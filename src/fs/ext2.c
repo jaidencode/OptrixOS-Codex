@@ -19,11 +19,21 @@ static ext2_file_t *find(const char *path) {
 }
 
 void ext2_init(void) {
-    file_count = 1;
+    ext2_format();
     files[0].name = "hello.txt";
     const char *msg = "Hello from ext2";
     files[0].size = strlen(msg);
     memcpy(files[0].data, msg, files[0].size);
+    file_count = 1;
+}
+
+void ext2_format(void) {
+    file_count = 0;
+}
+
+void ext2_list(void (*cb)(const char *name)) {
+    for (unsigned long i = 0; i < file_count; i++)
+        cb(files[i].name);
 }
 
 int ext2_read(const char *path, void *buf, unsigned long len) {

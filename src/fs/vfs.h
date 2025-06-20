@@ -11,5 +11,7 @@ void vfs_init(void);
 int vfs_mount(fs_type_t type);
 int vfs_read(const char *path, void *buf, unsigned long len);
 int vfs_write(const char *path, const void *buf, unsigned long len);
+void vfs_format(void);
+void vfs_list(void (*cb)(const char *name));
 
 #endif // VFS_H

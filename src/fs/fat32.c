@@ -19,11 +19,21 @@ static fat32_file_t *find(const char *path) {
 }
 
 void fat32_init(void) {
-    file_count = 1;
+    fat32_format();
     files[0].name = "fatfile.txt";
     const char *msg = "Hello from FAT32";
     files[0].size = strlen(msg);
     memcpy(files[0].data, msg, files[0].size);
+    file_count = 1;
+}
+
+void fat32_format(void) {
+    file_count = 0;
+}
+
+void fat32_list(void (*cb)(const char *name)) {
+    for (unsigned long i = 0; i < file_count; i++)
+        cb(files[i].name);
 }
 
 int fat32_read(const char *path, void *buf, unsigned long len) {
