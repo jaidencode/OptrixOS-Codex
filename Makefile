@@ -4,15 +4,22 @@ NASM = nasm
 CFLAGS = -m32 -ffreestanding -O2 -Wall -Wextra
 LDFLAGS = -m elf_i386
 BUILD = build
-ISO = OptrixOS.iso
+IMG = OptrixOS.img
 
 OBJS = $(BUILD)/boot.o $(BUILD)/kernel.o \
        $(BUILD)/string.o $(BUILD)/vfs.o $(BUILD)/ext2.o $(BUILD)/fat32.o $(BUILD)/ntfs.o
 
-all: $(BUILD)/kernel.bin
+all: $(IMG)
 
 $(BUILD)/kernel.bin: $(OBJS) linker.ld
-	$(LD) $(LDFLAGS) -T linker.ld -o $@ $(OBJS)
+        $(LD) $(LDFLAGS) -T linker.ld -o $@ $(OBJS)
+
+$(BUILD)/bootloader.bin: $(BUILD)/kernel.bin | $(BUILD)
+        $(eval SECTORS := $(shell expr \( $(shell stat -c %s $< ) + 511 \) / 512))
+        $(NASM) -f bin -DKERNEL_SECTORS=$(SECTORS) src/bootloader.s -o $@
+
+$(IMG): $(BUILD)/bootloader.bin $(BUILD)/kernel.bin
+        cat $(BUILD)/bootloader.bin $(BUILD)/kernel.bin > $@
 
 $(BUILD)/boot.o: src/boot.s | $(BUILD)
 	$(NASM) -f elf32 $< -o $@
@@ -38,20 +45,10 @@ $(BUILD)/ntfs.o: src/fs/ntfs.c | $(BUILD)
 $(BUILD):
 	mkdir -p $(BUILD)
 
-iso: all
-	mkdir -p $(BUILD)/isofiles/boot/grub
-	cp $(BUILD)/kernel.bin $(BUILD)/isofiles/boot/kernel.bin
-	echo 'set timeout=0' > $(BUILD)/isofiles/boot/grub/grub.cfg
-	echo 'menuentry "OptrixOS" { multiboot /boot/kernel.bin }' >> $(BUILD)/isofiles/boot/grub/grub.cfg
-	grub-mkstandalone -O i386-pc --modules="biosdisk iso9660 normal multiboot" \
-	--locales= --fonts= --compress=xz -o $(BUILD)/isofiles/boot/grub/core.img \
-	boot/grub/grub.cfg=$(BUILD)/isofiles/boot/grub/grub.cfg
-	cat /usr/lib/grub/i386-pc/cdboot.img $(BUILD)/isofiles/boot/grub/core.img > \
-	$(BUILD)/isofiles/boot/grub/bios.img
-	xorriso -as mkisofs -R -b boot/grub/bios.img -no-emul-boot \
-	-boot-load-size 4 -boot-info-table -o $(ISO) $(BUILD)/isofiles
+iso: $(IMG)
+        @echo "ISO target is no longer used. Built $(IMG) instead."
 	
 clean:
-	rm -rf $(BUILD) $(ISO)
+        rm -rf $(BUILD) $(IMG)
 
 .PHONY: all iso clean
