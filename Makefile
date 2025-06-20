@@ -7,7 +7,7 @@ BUILD = build
 ISO = OptrixOS.iso
 
 OBJS = $(BUILD)/boot.o $(BUILD)/kernel.o \
-       $(BUILD)/vfs.o $(BUILD)/ext2.o $(BUILD)/fat32.o $(BUILD)/ntfs.o
+       $(BUILD)/string.o $(BUILD)/vfs.o $(BUILD)/ext2.o $(BUILD)/fat32.o $(BUILD)/ntfs.o
 
 all: $(BUILD)/kernel.bin
 
@@ -18,6 +18,9 @@ $(BUILD)/boot.o: src/boot.s | $(BUILD)
 	$(NASM) -f elf32 $< -o $@
 
 $(BUILD)/kernel.o: src/kernel.c | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/string.o: src/string.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/vfs.o: src/fs/vfs.c | $(BUILD)
@@ -40,8 +43,14 @@ iso: all
 	cp $(BUILD)/kernel.bin $(BUILD)/isofiles/boot/kernel.bin
 	echo 'set timeout=0' > $(BUILD)/isofiles/boot/grub/grub.cfg
 	echo 'menuentry "OptrixOS" { multiboot /boot/kernel.bin }' >> $(BUILD)/isofiles/boot/grub/grub.cfg
-	grub-mkrescue -o $(ISO) $(BUILD)/isofiles 2>/dev/null
-
+	grub-mkstandalone -O i386-pc --modules="biosdisk iso9660 normal multiboot" \
+	--locales= --fonts= --compress=xz -o $(BUILD)/isofiles/boot/grub/core.img \
+	boot/grub/grub.cfg=$(BUILD)/isofiles/boot/grub/grub.cfg
+	cat /usr/lib/grub/i386-pc/cdboot.img $(BUILD)/isofiles/boot/grub/core.img > \
+	$(BUILD)/isofiles/boot/grub/bios.img
+	xorriso -as mkisofs -R -b boot/grub/bios.img -no-emul-boot \
+	-boot-load-size 4 -boot-info-table -o $(ISO) $(BUILD)/isofiles
+	
 clean:
 	rm -rf $(BUILD) $(ISO)
 
