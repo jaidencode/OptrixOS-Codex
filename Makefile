@@ -20,7 +20,9 @@ $(BUILD)/bootloader.bin: $(BUILD)/kernel.bin | $(BUILD)
 	$(NASM) -f bin -DKERNEL_SECTORS=$(SECTORS) src/bootloader.s -o $@
 
 $(IMG): $(BUILD)/bootloader.bin $(BUILD)/kernel.bin
-	cat $(BUILD)/bootloader.bin $(BUILD)/kernel.bin > $@
+	dd if=/dev/zero of=$@ bs=1M count=16
+	dd if=$(BUILD)/bootloader.bin of=$@ conv=notrunc
+	dd if=$(BUILD)/kernel.bin of=$@ bs=512 seek=1 conv=notrunc
 
 $(BUILD)/boot.o: src/boot.s | $(BUILD)
 	$(NASM) -f elf32 $< -o $@

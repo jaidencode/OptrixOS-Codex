@@ -54,10 +54,16 @@ def make_image():
     size = os.path.getsize('build/kernel.bin')
     sectors = (size + 511) // 512
     compile_bootloader(sectors)
+
+    disk_size = 16 * 1024 * 1024  # 16MB virtual hard disk
     with open('OptrixOS.img', 'wb') as out:
-        for f in ('build/bootloader.bin', 'build/kernel.bin'):
-            with open(f, 'rb') as inp:
-                out.write(inp.read())
+        out.truncate(disk_size)  # create zero-filled disk image
+        out.seek(0)
+        with open('build/bootloader.bin', 'rb') as inp:
+            out.write(inp.read())
+        out.seek(512)
+        with open('build/kernel.bin', 'rb') as inp:
+            out.write(inp.read())
 
 def make_iso():
     run([MKISOFS_EXE, '-quiet', '-o', 'OptrixOS.iso', '-b', 'OptrixOS.img',
