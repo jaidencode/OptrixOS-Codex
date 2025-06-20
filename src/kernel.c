@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "fs/vfs.h"
+#include "fs/ext2.h"
 #include "string.h"
 
 static volatile unsigned char *video = (unsigned char *)0xb8000;
@@ -148,11 +149,11 @@ static void shell(void) {
     }
 }
 
-void kernel_main(void) {
+void kernel_main(void *rootfs, unsigned long rootfs_size) {
     clear_screen();
     print_string("OptrixOS booted\n");
     vfs_init();
     vfs_mount(FS_EXT2);
-    vfs_format();
+    ext2_load(rootfs, rootfs_size);
     shell();
 }

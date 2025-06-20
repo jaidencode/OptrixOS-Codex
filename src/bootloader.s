@@ -13,6 +13,22 @@
 %define KERNEL_LOAD_ADDR 0x00100000
 %endif
 
+%ifndef ROOTFS_SECTORS
+%define ROOTFS_SECTORS 0
+%endif
+
+%ifndef ROOTFS_LBA
+%define ROOTFS_LBA KERNEL_LBA+KERNEL_SECTORS
+%endif
+
+%ifndef ROOTFS_LOAD_ADDR
+%define ROOTFS_LOAD_ADDR 0x00200000
+%endif
+
+%ifndef ROOTFS_SIZE
+%define ROOTFS_SIZE ROOTFS_SECTORS*512
+%endif
+
 start:
     xor ax, ax
     mov ds, ax
@@ -28,6 +44,17 @@ start:
     mov dword [dap+8], KERNEL_LBA
     mov dword [dap+12], 0
 
+    mov si, dap
+    mov dl, [BOOT_DRIVE]
+    mov ah, 0x42
+    int 0x13
+    jc disk_error
+
+    ; load root filesystem
+    mov word [dap+2], ROOTFS_SECTORS
+    mov dword [dap+4], ROOTFS_LOAD_ADDR
+    mov dword [dap+8], ROOTFS_LBA
+    mov dword [dap+12], 0
     mov si, dap
     mov dl, [BOOT_DRIVE]
     mov ah, 0x42
@@ -52,6 +79,8 @@ protected:
     mov gs, ax
     mov ss, ax
     mov esp, 0x90000
+    mov esi, ROOTFS_LOAD_ADDR
+    mov edi, ROOTFS_SIZE
     mov eax, KERNEL_LOAD_ADDR
     jmp eax
 
@@ -99,8 +128,8 @@ BOOT_DRIVE db 0
 dap:
     db 0x10,0      ; size and reserved
     dw 0           ; sectors (patched)
-    dd KERNEL_LOAD_ADDR ; load address
-    dq KERNEL_LBA      ; starting LBA
+    dd 0           ; load address (patched)
+    dq 0           ; starting LBA (patched)
 
 TIMES 510-($-$$) db 0
 DW 0xAA55

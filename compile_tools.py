@@ -1,4 +1,4 @@
-import os, shutil, subprocess
+import os, shutil, subprocess, struct
 # --- CONFIGURATION ---
 TOOLCHAIN_DIR = os.environ.get("TOOLCHAIN_DIR") or r"C:\\Users\\jaide\\Downloads\\i686-elf-tools-windows\\bin"
 CC = os.environ.get("CC") or os.path.join(TOOLCHAIN_DIR, "i686-elf-gcc.exe")
@@ -30,6 +30,25 @@ def run(cmd):
     subprocess.check_call(cmd)
 
 
+def create_rootfs():
+    os.makedirs('rootfs', exist_ok=True)
+    if not os.listdir('rootfs'):
+        with open(os.path.join('rootfs', 'hello.txt'), 'w') as f:
+            f.write('Hello from disk')
+    with open('rootfs.bin', 'wb') as out:
+        files = os.listdir('rootfs')
+        out.write(struct.pack('<I', len(files)))
+        for name in files:
+            path = os.path.join('rootfs', name)
+            with open(path, 'rb') as f:
+                data = f.read()
+            name_b = name.encode('utf-8')
+            out.write(struct.pack('<I', len(name_b)))
+            out.write(name_b)
+            out.write(struct.pack('<I', len(data)))
+            out.write(data)
+
+
 def compile_kernel():
     os.makedirs('build', exist_ok=True)
     run([NASM, '-f', 'elf32', 'src/boot.s', '-o', 'build/boot.o'])
@@ -43,26 +62,36 @@ def compile_kernel():
          'build/boot.o', 'build/kernel.o', 'build/string.o', 'build/vfs.o',
          'build/ext2.o', 'build/fat32.o', 'build/ntfs.o'])
 
-def compile_bootloader(kernel_sectors):
+def compile_bootloader(kernel_sectors, rootfs_sectors, rootfs_size):
     args = [NASM, '-f', 'bin',
             f'-DKERNEL_SECTORS={kernel_sectors}',
             '-DKERNEL_LBA=1',
+            f'-DROOTFS_SECTORS={rootfs_sectors}',
+            f'-DROOTFS_SIZE={rootfs_size}',
+            f'-DROOTFS_LBA={1 + kernel_sectors}',
+            '-DROOTFS_LOAD_ADDR=0x200000',
             'src/bootloader.s', '-o', 'build/bootloader.bin']
     run(args)
 
 def make_image():
-    size = os.path.getsize('build/kernel.bin')
-    sectors = (size + 511) // 512
-    compile_bootloader(sectors)
+    create_rootfs()
+    ksize = os.path.getsize('build/kernel.bin')
+    ksectors = (ksize + 511) // 512
+    rsize = os.path.getsize('rootfs.bin')
+    rsectors = (rsize + 511) // 512
+    compile_bootloader(ksectors, rsectors, rsize)
 
     disk_size = 16 * 1024 * 1024  # 16MB virtual hard disk
     with open('OptrixOS.img', 'wb') as out:
-        out.truncate(disk_size)  # create zero-filled disk image
+        out.truncate(disk_size)
         out.seek(0)
         with open('build/bootloader.bin', 'rb') as inp:
             out.write(inp.read())
         out.seek(512)
         with open('build/kernel.bin', 'rb') as inp:
+            out.write(inp.read())
+        out.seek(512 + ksectors * 512)
+        with open('rootfs.bin', 'rb') as inp:
             out.write(inp.read())
 
 def make_iso():
