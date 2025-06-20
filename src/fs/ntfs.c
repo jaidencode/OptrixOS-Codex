@@ -19,11 +19,21 @@ static ntfs_file_t *find(const char *path) {
 }
 
 void ntfs_init(void) {
-    file_count = 1;
+    ntfs_format();
     files[0].name = "ntfsfile.txt";
     const char *msg = "Hello from NTFS";
     files[0].size = strlen(msg);
     memcpy(files[0].data, msg, files[0].size);
+    file_count = 1;
+}
+
+void ntfs_format(void) {
+    file_count = 0;
+}
+
+void ntfs_list(void (*cb)(const char *name)) {
+    for (unsigned long i = 0; i < file_count; i++)
+        cb(files[i].name);
 }
 
 int ntfs_read(const char *path, void *buf, unsigned long len) {

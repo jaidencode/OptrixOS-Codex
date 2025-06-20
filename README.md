@@ -5,10 +5,10 @@ This repository contains a very small example OS that now boots using a custom b
 ## Building
 
 1. Install `nasm` and `genisoimage`.
-2. Run `python3 compile_tools.py` or simply `make` to build `OptrixOS.img` and `OptrixOS.iso`.
-3. Boot the OS from the virtual hard drive image with QEMU:
+2. Run `python3 compile_tools.py` or simply `make` to build `OptrixOS.iso`.
+3. Boot the ISO with QEMU:
    ```bash
-   qemu-system-i386 -hda OptrixOS.img
+   qemu-system-i386 -cdrom OptrixOS.iso
    ```
 
-`compile_tools.py` now creates a 16MB hard disk image (`OptrixOS.img`) containing the bootloader and kernel. An ISO is still produced for convenience.
+`compile_tools.py` creates a 16MB virtual disk during the build and embeds it directly into `OptrixOS.iso`. The intermediate image is removed.

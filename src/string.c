@@ -37,3 +37,12 @@ int strncmp(const char *a, const char *b, size_t n) {
     }
     return 0;
 }
+
+char *strchr(const char *s, int c) {
+    while (*s) {
+        if (*s == c)
+            return (char *)s;
+        s++;
+    }
+    return NULL;
+}
