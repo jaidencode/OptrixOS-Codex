@@ -5,21 +5,22 @@ CFLAGS = -m32 -ffreestanding -O2 -Wall -Wextra
 LDFLAGS = -m elf_i386
 BUILD = build
 IMG = OptrixOS.img
+ISO = OptrixOS.iso
 
 OBJS = $(BUILD)/boot.o $(BUILD)/kernel.o \
        $(BUILD)/string.o $(BUILD)/vfs.o $(BUILD)/ext2.o $(BUILD)/fat32.o $(BUILD)/ntfs.o
 
-all: $(IMG)
+all: $(ISO)
 
 $(BUILD)/kernel.bin: $(OBJS) linker.ld
-        $(LD) $(LDFLAGS) -T linker.ld -o $@ $(OBJS)
+	$(LD) $(LDFLAGS) -T linker.ld -o $@ $(OBJS)
 
 $(BUILD)/bootloader.bin: $(BUILD)/kernel.bin | $(BUILD)
-        $(eval SECTORS := $(shell expr \( $(shell stat -c %s $< ) + 511 \) / 512))
-        $(NASM) -f bin -DKERNEL_SECTORS=$(SECTORS) src/bootloader.s -o $@
+	$(eval SECTORS := $(shell expr \( $(shell stat -c %s $< ) + 511 \) / 512))
+	$(NASM) -f bin -DKERNEL_SECTORS=$(SECTORS) src/bootloader.s -o $@
 
 $(IMG): $(BUILD)/bootloader.bin $(BUILD)/kernel.bin
-        cat $(BUILD)/bootloader.bin $(BUILD)/kernel.bin > $@
+	cat $(BUILD)/bootloader.bin $(BUILD)/kernel.bin > $@
 
 $(BUILD)/boot.o: src/boot.s | $(BUILD)
 	$(NASM) -f elf32 $< -o $@
@@ -45,10 +46,12 @@ $(BUILD)/ntfs.o: src/fs/ntfs.c | $(BUILD)
 $(BUILD):
 	mkdir -p $(BUILD)
 
-iso: $(IMG)
-        @echo "ISO target is no longer used. Built $(IMG) instead."
+$(ISO): $(IMG)
+	genisoimage -quiet -o $@ -b $(IMG) -no-emul-boot -boot-load-size 4 -boot-info-table .
+
+iso: $(ISO)
 	
 clean:
-        rm -rf $(BUILD) $(IMG)
+	rm -rf $(BUILD) $(IMG) $(ISO)
 
 .PHONY: all iso clean

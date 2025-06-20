@@ -59,6 +59,11 @@ def make_image():
             with open(f, 'rb') as inp:
                 out.write(inp.read())
 
+def make_iso():
+    run([MKISOFS_EXE, '-quiet', '-o', 'OptrixOS.iso', '-b', 'OptrixOS.img',
+         '-no-emul-boot', '-boot-load-size', '4', '-boot-info-table', '.'])
+
 if __name__ == '__main__':
     compile_kernel()
     make_image()
+    make_iso()
