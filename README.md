@@ -11,4 +11,6 @@ This repository contains a very small example OS that now boots using a custom b
    qemu-system-i386 -cdrom OptrixOS.iso
    ```
 
-`compile_tools.py` creates a 16MB virtual disk during the build and embeds it directly into `OptrixOS.iso`. The intermediate image is removed.
+`compile_tools.py` creates a 16MB virtual disk with a small root filesystem. The
+bootloader loads both the kernel and this filesystem into memory before
+transferring control. The intermediate image is removed.

@@ -5,6 +5,8 @@ extern kernel_main
 _start:
     cli
     mov esp, stack_top
+    push edi
+    push esi
     call kernel_main
 .hang:
     hlt

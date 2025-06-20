@@ -18,13 +18,48 @@ static ext2_file_t *find(const char *path) {
     return NULL;
 }
 
+static char names[4][32];
+
 void ext2_init(void) {
     ext2_format();
-    files[0].name = "hello.txt";
-    const char *msg = "Hello from ext2";
-    files[0].size = strlen(msg);
-    memcpy(files[0].data, msg, files[0].size);
-    file_count = 1;
+}
+
+void ext2_load(const void *data, unsigned long size) {
+    const unsigned char *p = (const unsigned char *)data;
+    const unsigned char *end = p + size;
+    if (size < 4)
+        return;
+
+    unsigned long count;
+    memcpy(&count, p, 4);
+    p += 4;
+    file_count = 0;
+    for (unsigned long i = 0; i < count && p < end && file_count < 4; i++) {
+        unsigned long nlen;
+        if (p + 4 > end)
+            break;
+        memcpy(&nlen, p, 4);
+        p += 4;
+        if (nlen >= sizeof(names[0]) || p + nlen > end)
+            break;
+        memcpy(names[file_count], p, nlen);
+        names[file_count][nlen] = 0;
+        p += nlen;
+        unsigned long fsize;
+        if (p + 4 > end)
+            break;
+        memcpy(&fsize, p, 4);
+        p += 4;
+        if (p + fsize > end)
+            break;
+        if (fsize > sizeof(files[file_count].data))
+            fsize = sizeof(files[file_count].data);
+        memcpy(files[file_count].data, p, fsize);
+        files[file_count].size = fsize;
+        files[file_count].name = names[file_count];
+        p += fsize;
+        file_count++;
+    }
 }
 
 void ext2_format(void) {
