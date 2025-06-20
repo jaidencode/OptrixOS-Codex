@@ -5,6 +5,7 @@
 
 static volatile unsigned char *video = (unsigned char *)0xb8000;
 static unsigned short cursor = 0;
+static const unsigned char ATTR = 0x1F; /* white on blue */
 static char current_path[64] = "root";
 
 static inline void outb(uint16_t port, uint8_t val) {
@@ -23,7 +24,7 @@ static void print_char(char c) {
         return;
     }
     video[cursor * 2] = c;
-    video[cursor * 2 + 1] = 0x07;
+    video[cursor * 2 + 1] = ATTR;
     cursor++;
 }
 
@@ -36,8 +37,16 @@ static void backspace(void) {
     if (cursor > 0) {
         cursor--;
         video[cursor * 2] = ' ';
-        video[cursor * 2 + 1] = 0x07;
+        video[cursor * 2 + 1] = ATTR;
     }
+}
+
+static void clear_screen(void) {
+    for (unsigned int i = 0; i < 80 * 25; i++) {
+        video[i * 2] = ' ';
+        video[i * 2 + 1] = ATTR;
+    }
+    cursor = 0;
 }
 
 static const char keymap[128] = {
@@ -115,6 +124,7 @@ static void shell(void) {
 }
 
 void kernel_main(void) {
+    clear_screen();
     print_string("OptrixOS booted\n");
     vfs_init();
     vfs_mount(FS_EXT2);
