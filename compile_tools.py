@@ -34,7 +34,13 @@ def compile_kernel():
     os.makedirs('build', exist_ok=True)
     run([NASM, '-f', 'elf32', 'src/boot.s', '-o', 'build/boot.o'])
     run([CC, '-m32', '-ffreestanding', '-O2', '-c', 'src/kernel.c', '-o', 'build/kernel.o'])
-    run([LD, '-m', 'elf_i386', '-T', 'linker.ld', '-o', 'build/kernel.bin', 'build/boot.o', 'build/kernel.o'])
+    run([CC, '-m32', '-ffreestanding', '-O2', '-c', 'src/fs/vfs.c', '-o', 'build/vfs.o'])
+    run([CC, '-m32', '-ffreestanding', '-O2', '-c', 'src/fs/ext2.c', '-o', 'build/ext2.o'])
+    run([CC, '-m32', '-ffreestanding', '-O2', '-c', 'src/fs/fat32.c', '-o', 'build/fat32.o'])
+    run([CC, '-m32', '-ffreestanding', '-O2', '-c', 'src/fs/ntfs.c', '-o', 'build/ntfs.o'])
+    run([LD, '-m', 'elf_i386', '-T', 'linker.ld', '-o', 'build/kernel.bin',
+         'build/boot.o', 'build/kernel.o', 'build/vfs.o', 'build/ext2.o',
+         'build/fat32.o', 'build/ntfs.o'])
 
 def make_iso():
     os.makedirs('build/isofiles/boot/grub', exist_ok=True)

@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include "fs/vfs.h"
 
 static volatile unsigned char *video = (unsigned char *)0xb8000;
 
@@ -8,6 +9,9 @@ void kernel_main(void) {
         video[i * 2] = msg[i];
         video[i * 2 + 1] = 0x07;
     }
+    vfs_init();
+    vfs_mount(FS_EXT2);
+
     for (;;) {
         __asm__("hlt");
     }
