@@ -32,6 +32,7 @@ stage2_start:
     int 0x13
     jc disk_error
 
+    mov dl, [boot_drive]
     jmp 0x0000:KERNEL_LOAD_ADDR
 
 disk_error:
