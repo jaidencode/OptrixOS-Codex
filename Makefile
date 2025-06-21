@@ -7,7 +7,7 @@ BUILD = build
 IMG = OptrixOS.img
 ISO = OptrixOS.iso
 
-OBJS = $(BUILD)/boot.o $(BUILD)/kernel.o \
+OBJS = $(BUILD)/boot.o $(BUILD)/kernel.o $(BUILD)/shell.o \
        $(BUILD)/string.o $(BUILD)/vfs.o $(BUILD)/ext2.o $(BUILD)/fat32.o $(BUILD)/ntfs.o
 
 all: $(ISO)
@@ -27,7 +27,11 @@ $(IMG): $(BUILD)/bootloader.bin $(BUILD)/kernel.bin
 $(BUILD)/boot.o: src/boot.s | $(BUILD)
 	$(NASM) -f elf32 $< -o $@
 
+
 $(BUILD)/kernel.o: src/kernel.c | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/shell.o: src/shell.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/string.o: src/string.c | $(BUILD)
