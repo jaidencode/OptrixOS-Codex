@@ -1,6 +1,7 @@
 CC = gcc
 LD = ld
 NASM = nasm
+OBJCOPY = objcopy
 CFLAGS = -m32 -ffreestanding -O2 -Wall -Wextra
 LDFLAGS = -m elf_i386
 BUILD = build
@@ -12,8 +13,12 @@ OBJS = $(BUILD)/boot.o $(BUILD)/kernel.o $(BUILD)/shell.o \
 
 all: $(ISO)
 
-$(BUILD)/kernel.bin: $(OBJS) linker.ld
+$(BUILD)/kernel.elf: $(OBJS) linker.ld | $(BUILD)
 	$(LD) $(LDFLAGS) -T linker.ld -o $@ $(OBJS)
+
+$(BUILD)/kernel.bin: $(BUILD)/kernel.elf
+	$(OBJCOPY) -O binary $< $@
+
 
 $(BUILD)/bootloader.bin: $(BUILD)/kernel.bin | $(BUILD)
 	$(eval SECTORS := $(shell expr \( $(shell stat -c %s $< ) + 511 \) / 512))
