@@ -30,6 +30,15 @@ start_pm:
     mov ss, ax
     mov esp, 0x90000
 
+    ; clear screen with blue background
+    mov ax, 0x1F20
+    mov edi, 0xb8000
+    mov ecx, 80*25
+.cls_loop:
+    mov [edi], ax
+    add edi, 2
+    loop .cls_loop
+
     mov esi, msg
     call print_string_pm
 
@@ -56,14 +65,14 @@ load_kernel:
 
 ; Print string in protected mode (BIOS video memory write)
 print_string_pm:
-    mov ah, 0x0F
-    mov bh, 0x00
+    mov ebx, 0xb8000
 .next:
     lodsb
     test al, al
     jz .done
-    mov [0xb8000], al
-    add dword [0xb8000], 2
+    mov ah, 0x1F
+    mov [ebx], ax
+    add ebx, 2
     jmp .next
 .done:
     ret

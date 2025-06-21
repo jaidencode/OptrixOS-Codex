@@ -48,12 +48,12 @@ def build():
     run([NASM, '-f', 'elf', os.path.join(SRC_DIR, 'gdt.asm'), '-o', os.path.join(BUILD, 'gdt.o')])
     run([NASM, '-f', 'elf', os.path.join(SRC_DIR, 'isr.asm'), '-o', os.path.join(BUILD, 'isr.o')])
 
-    for src in ['kernel.c', 'io.c', 'shell.c', 'idt.c']:
+    for src in ['kernel.c', 'io.c', 'shell.c', 'idt.c', 'keyboard.c']:
         run([CC] + CFLAGS + ['-c', os.path.join(SRC_DIR, src), '-o', os.path.join(BUILD, f"{src[:-2]}.o")])
 
     run([LD, '-m', 'elf_i386', '-Ttext', '0x10000', '-o', os.path.join(BUILD, 'os.elf'),
          os.path.join(BUILD, 'gdt.o'), os.path.join(BUILD, 'io.o'), os.path.join(BUILD, 'kernel.o'),
-         os.path.join(BUILD, 'shell.o'), os.path.join(BUILD, 'idt.o'), os.path.join(BUILD, 'isr.o')])
+         os.path.join(BUILD, 'shell.o'), os.path.join(BUILD, 'keyboard.o'), os.path.join(BUILD, 'idt.o'), os.path.join(BUILD, 'isr.o')])
 
     run([OBJCOPY, '-O', 'binary', os.path.join(BUILD, 'os.elf'), os.path.join(BUILD, 'os.bin')])
 
