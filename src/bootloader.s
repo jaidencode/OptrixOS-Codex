@@ -37,6 +37,7 @@ start:
     mov sp, 0x7C00
 
     mov [BOOT_DRIVE], dl
+    call enable_a20
 
     ; set up disk address packet
     mov word [dap+2], KERNEL_SECTORS
@@ -50,7 +51,8 @@ start:
     int 0x13
     jc disk_error
 
-    ; load root filesystem
+%if ROOTFS_SECTORS > 0
+    ; load root filesystem if present
     mov word [dap+2], ROOTFS_SECTORS
     mov dword [dap+4], ROOTFS_LOAD_ADDR
     mov dword [dap+8], ROOTFS_LBA
@@ -60,8 +62,7 @@ start:
     mov ah, 0x42
     int 0x13
     jc disk_error
-
-    call enable_a20
+%endif
 
     cli
     lgdt [gdt_desc]
