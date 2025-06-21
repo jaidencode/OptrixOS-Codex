@@ -1,69 +1,37 @@
-CC = gcc
-LD = ld
-NASM = nasm
-OBJCOPY = objcopy
-CFLAGS = -m32 -ffreestanding -O2 -Wall -Wextra
-LDFLAGS = -m elf_i386
-BUILD = build
-IMG = OptrixOS.img
-ISO = OptrixOS.iso
+AS=nasm
+CC=gcc
+LD=ld
+CFLAGS=-m32 -ffreestanding -fno-pic -nostdlib -fno-builtin -fno-stack-protector -nostartfiles -nodefaultlibs
 
-OBJS = $(BUILD)/boot.o $(BUILD)/kernel.o $(BUILD)/shell.o \
-       $(BUILD)/string.o $(BUILD)/vfs.o $(BUILD)/ext2.o $(BUILD)/fat32.o $(BUILD)/ntfs.o
+all: os.img
 
-all: $(ISO)
+boot/boot.bin: boot/boot.asm
+	$(AS) -f bin $< -o $@
 
-$(BUILD)/kernel.elf: $(OBJS) linker.ld | $(BUILD)
-	$(LD) $(LDFLAGS) -T linker.ld -o $@ $(OBJS)
+boot/stage2.bin: boot/stage2.asm
+	$(AS) -f bin $< -o $@
 
-$(BUILD)/kernel.bin: $(BUILD)/kernel.elf
-	$(OBJCOPY) -O binary $< $@
+src/gdt.o: src/gdt.asm
+	$(AS) -f elf $< -o $@
 
+src/isr.o: src/isr.asm
+	$(AS) -f elf $< -o $@
 
-$(BUILD)/bootloader.bin: $(BUILD)/kernel.bin | $(BUILD)
-	$(eval SECTORS := $(shell expr \( $(shell stat -c %s $< ) + 511 \) / 512))
-	$(NASM) -f bin -DKERNEL_SECTORS=$(SECTORS) src/bootloader.s -o $@
-
-$(IMG): $(BUILD)/bootloader.bin $(BUILD)/kernel.bin
-	dd if=/dev/zero of=$@ bs=1M count=16
-	dd if=$(BUILD)/bootloader.bin of=$@ conv=notrunc
-	dd if=$(BUILD)/kernel.bin of=$@ bs=512 seek=1 conv=notrunc
-
-$(BUILD)/boot.o: src/boot.s | $(BUILD)
-	$(NASM) -f elf32 $< -o $@
-
-
-$(BUILD)/kernel.o: src/kernel.c | $(BUILD)
+src/%.o: src/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/shell.o: src/shell.c | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
+os.bin: src/gdt.o src/io.o src/kernel.o src/shell.o src/idt.o src/isr.o
+	$(LD) -m elf_i386 -Ttext 0x10000 -o os.elf $^
+	objcopy -O binary os.elf $@
 
-$(BUILD)/string.o: src/string.c | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
+os.img: boot/boot.bin boot/stage2.bin os.bin
+	dd if=/dev/zero of=os.img bs=512 count=2880
+	dd if=boot/boot.bin of=os.img conv=notrunc
+	dd if=boot/stage2.bin of=os.img seek=1 conv=notrunc
+	dd if=os.bin of=os.img seek=4 conv=notrunc
 
-$(BUILD)/vfs.o: src/fs/vfs.c | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
+run: os.img
+	qemu-system-i386 -fda os.img
 
-$(BUILD)/ext2.o: src/fs/ext2.c | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD)/fat32.o: src/fs/fat32.c | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD)/ntfs.o: src/fs/ntfs.c | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD):
-	mkdir -p $(BUILD)
-
-$(ISO): $(IMG)
-	genisoimage -quiet -o $@ -b $(IMG) -no-emul-boot -boot-load-size 4 -boot-info-table .
-	rm -f $(IMG)
-
-iso: $(ISO)
-	
 clean:
-	rm -rf $(BUILD) $(IMG) $(ISO)
-
-.PHONY: all iso clean
+	rm -f boot/*.bin src/*.o *.elf *.bin *.img
