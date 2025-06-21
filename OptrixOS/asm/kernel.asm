@@ -38,21 +38,23 @@ kernel_start:
     mov si, message
     call print_string
 
-    ; print BIOS information on second line
-    mov di, 160          ; start of line 2
+    mov di, 160          ; line 2
     mov si, bios_label
     call print_string
 
-    ; boot drive passed in DL from stage2
-    mov al, dl
+    mov al, dl           ; boot drive
     call print_hex8
 
     mov si, mem_label
     call print_string
 
-    int 0x12              ; AX = base memory in KB
+    int 0x12             ; AX = base memory in KB
     call print_hex16
     mov si, kb_suffix
+    call print_string
+
+    mov di, 320          ; line 3
+    mov si, boot_complete_msg
     call print_string
 
 .halt:
@@ -119,3 +121,4 @@ message db 'Welcome to OptrixOS',0
 bios_label db 'BIOS Drive: 0x',0
 mem_label db ' Memory: 0x',0
 kb_suffix db ' KB',0
+boot_complete_msg db 'Boot complete.',0
