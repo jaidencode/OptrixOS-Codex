@@ -33,9 +33,9 @@ kernel_start:
     out dx, al
 
 
-    ; print welcome message on first line
+    ; print kernel message on first line
     mov di, 0
-    mov si, message
+    mov si, kernel_msg
     call print_string
 
     ; print BIOS information on second line
@@ -115,7 +115,7 @@ print_hex16:
     pop ax
     ret
 
-message db 'Welcome to OptrixOS',0
+kernel_msg db 'OptrixOS Kernel Loaded',0
 bios_label db 'BIOS Drive: 0x',0
 mem_label db ' Memory: 0x',0
 kb_suffix db ' KB',0
