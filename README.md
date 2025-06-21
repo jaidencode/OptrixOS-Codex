@@ -6,8 +6,9 @@ This repository demonstrates a very small example operating system.  The bootloa
 
 - `OptrixOS/boot` – first and second stage bootloaders (`boot.asm`, `stage2.asm`)
 - `OptrixOS/asm` – assembly sources for the kernel (`kernel.asm`)
-- `OptrixOS/c` – C sources (empty by default)
-- `OptrixOS/h` – header files (empty by default)
+- `src/c` – C sources (empty by default)
+- `src/h` – header files (empty by default)
+- `drivers` – placeholder for future drivers
 
 ## Building
 
