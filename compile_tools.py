@@ -48,16 +48,40 @@ def assemble():
     kernel_bin = os.path.join(BUILD, 'kernel.bin')
     boot_bin = os.path.join(BUILD, 'boot.bin')
 
-    run([NASM, '-f', 'bin', os.path.join(BOOT_DIR, 'stage2.asm'), '-o', stage2_bin])
+    run([NASM, '-f', 'bin', '-I', BOOT_DIR + '/', os.path.join(BOOT_DIR, 'stage2.asm'), '-o', stage2_bin])
     stage2_sectors = math.ceil(os.path.getsize(stage2_bin) / 512)
-    run([NASM, '-f', 'bin', os.path.join(ASM_DIR, 'kernel.asm'), '-o', kernel_bin])
+    run([
+        NASM,
+        '-f',
+        'bin',
+        '-I', ASM_DIR + '/',
+        '-I', os.path.join(ROOT_DIR, 'drivers') + '/',
+        os.path.join(ASM_DIR, 'kernel.asm'),
+        '-o',
+        kernel_bin,
+    ])
     kernel_sectors = math.ceil(os.path.getsize(kernel_bin) / 512)
-    run([NASM, '-f', 'bin',
-         f'-DKERNEL_START_SECTOR={2 + stage2_sectors}',
-         f'-DKERNEL_SECTORS={kernel_sectors}',
-         os.path.join(BOOT_DIR, 'stage2.asm'), '-o', stage2_bin])
-    run([NASM, '-f', 'bin', f'-DSTAGE2_SECTORS={stage2_sectors}',
-         os.path.join(BOOT_DIR, 'boot.asm'), '-o', boot_bin])
+    run([
+        NASM,
+        '-f',
+        'bin',
+        '-I', BOOT_DIR + '/',
+        f'-DKERNEL_START_SECTOR={2 + stage2_sectors}',
+        f'-DKERNEL_SECTORS={kernel_sectors}',
+        os.path.join(BOOT_DIR, 'stage2.asm'),
+        '-o',
+        stage2_bin,
+    ])
+    run([
+        NASM,
+        '-f',
+        'bin',
+        '-I', BOOT_DIR + '/',
+        f'-DSTAGE2_SECTORS={stage2_sectors}',
+        os.path.join(BOOT_DIR, 'boot.asm'),
+        '-o',
+        boot_bin,
+    ])
 
     # Only build C sources if the directory exists
     if os.path.isdir(C_DIR):
