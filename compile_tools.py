@@ -1,13 +1,24 @@
-import os, subprocess
+import os
+import shutil
+import subprocess
 
 BUILD = 'build'
 
 BOOT_DIR = 'OptrixOS/boot'
 SRC_DIR = 'OptrixOS/src'
 
-CC = 'gcc'
-LD = 'ld'
-NASM = 'nasm'
+def find_tool(base):
+    """Return the cross prefixed tool if available, else the base name."""
+    env = os.environ.get(base.upper())
+    if env:
+        return env
+    prefixed = f'i686-elf-{base}'
+    return prefixed if shutil.which(prefixed) else base
+
+CC = find_tool('gcc')
+LD = find_tool('ld')
+NASM = find_tool('nasm')
+OBJCOPY = find_tool('objcopy')
 
 CFLAGS = ['-m32', '-ffreestanding', '-fno-pic', '-nostdlib', '-fno-builtin',
           '-fno-stack-protector']
@@ -30,7 +41,7 @@ def build():
 
     run([LD, '-m', 'elf_i386', '-Ttext', '0x10000', '-o', f'{BUILD}/os.elf',
          f'{BUILD}/gdt.o', f'{BUILD}/io.o', f'{BUILD}/kernel.o', f'{BUILD}/shell.o', f'{BUILD}/idt.o', f'{BUILD}/isr.o'])
-    run(['objcopy', '-O', 'binary', f'{BUILD}/os.elf', f'{BUILD}/os.bin'])
+    run([OBJCOPY, '-O', 'binary', f'{BUILD}/os.elf', f'{BUILD}/os.bin'])
 
     run(['dd', 'if=/dev/zero', f'of={BUILD}/os.img', 'bs=512', 'count=2880'])
     run(['dd', f'if={BUILD}/boot.bin', f'of={BUILD}/os.img', 'conv=notrunc'])
