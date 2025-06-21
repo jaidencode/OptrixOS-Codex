@@ -87,8 +87,20 @@ def create_iso(img_path):
     os.makedirs(iso_root, exist_ok=True)
     shutil.copy(img_path, os.path.join(iso_root, 'boot.img'))
     copytree_overwrite(ROOT_DIR, os.path.join(iso_root, 'OptrixOS'))
-    run([MKISOFS, '-quiet', '-V', 'OPTRIXOS', '-input-charset', 'iso8859-1', '-o', ISO_NAME,
-         '-b', 'boot.img', '-no-emul-boot', '-boot-load-size', '4', '-boot-info-table', iso_root])
+    run([
+        MKISOFS,
+        '-quiet',
+        '-V',
+        'OPTRIXOS',
+        '-input-charset',
+        'iso8859-1',
+        '-o',
+        ISO_NAME,
+        '-b',
+        'boot.img',
+        '-boot-info-table',
+        iso_root,
+    ])
 
 def cleanup():
     if not os.path.isdir(BUILD):
