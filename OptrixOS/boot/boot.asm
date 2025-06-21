@@ -9,6 +9,9 @@ boot_start:
     mov ss, ax
     mov sp, 0x7C00
 
+    mov si, msg_stage1
+    call print
+
     mov [boot_drive], dl
 
     ; Read stage2 from disk
@@ -21,6 +24,9 @@ boot_start:
     mov cl, 2               ; starting sector 2
     int 0x13
     jc disk_error
+
+    mov si, msg_stage1_ok
+    call print
 
     jmp 0x0000:0x7E00
 
@@ -42,6 +48,8 @@ print:
 
 boot_drive db 0
 err_msg db 'Boot error',0
+msg_stage1 db 'Stage1: Loading Stage2...',0
+msg_stage1_ok db 'Stage1 OK',0
 
 times 510-($-$$) db 0
 DW 0xAA55
