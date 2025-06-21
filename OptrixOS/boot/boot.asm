@@ -22,6 +22,8 @@ hang:   jmp hang
 
 ; -- print_string --
 print_string:
+    mov bh, 0x00
+    mov bl, 0x1F
     lodsb
     or al, al
     jz .done
