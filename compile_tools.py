@@ -36,8 +36,12 @@ def assemble():
     run([NASM, '-f', 'bin', os.path.join(ASM_DIR, 'kernel.asm'), '-o', kernel_bin])
     kernel_sectors = math.ceil(os.path.getsize(kernel_bin) / 512)
 
+    # BIOS sector numbering starts at 1, so the kernel must be placed
+    # after the boot sector (1) and stage2 (starting at sector 2).
+    # stage2 occupies `stage2_sectors` sectors beginning at sector 2,
+    # therefore the first kernel sector is 2 + stage2_sectors.
     run([NASM, '-f', 'bin',
-         f'-DKERNEL_START_SECTOR={1 + stage2_sectors}',
+         f'-DKERNEL_START_SECTOR={2 + stage2_sectors}',
          f'-DKERNEL_SECTORS={kernel_sectors}',
          os.path.join(BOOT_DIR, 'stage2.asm'), '-o', stage2_bin])
 
