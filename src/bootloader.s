@@ -51,7 +51,8 @@ start:
     int 0x13
     jc disk_error
 
-    ; load root filesystem
+%if ROOTFS_SECTORS > 0
+    ; load root filesystem if present
     mov word [dap+2], ROOTFS_SECTORS
     mov dword [dap+4], ROOTFS_LOAD_ADDR
     mov dword [dap+8], ROOTFS_LBA
@@ -61,6 +62,7 @@ start:
     mov ah, 0x42
     int 0x13
     jc disk_error
+%endif
 
     cli
     lgdt [gdt_desc]
