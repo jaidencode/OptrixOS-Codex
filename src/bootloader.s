@@ -30,15 +30,15 @@
 %endif
 
 start:
-    mov si, msg_start
-    call print_string
+    cli
     xor ax, ax
     mov ds, ax
     mov es, ax
     mov ss, ax
     mov sp, 0x7C00
-
     mov [BOOT_DRIVE], dl
+    mov si, msg_start
+    call print_string
     call enable_a20
     mov si, msg_a20
     call print_string
