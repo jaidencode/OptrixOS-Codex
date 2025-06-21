@@ -2,6 +2,8 @@
 
 This repository contains a very small example OS that now boots using a custom bootloader and prints a message to the screen. It provides a starting point for experimenting with OS development. A basic VFS layer with minimal ext2, FAT32 and NTFS drivers is included for demonstration purposes.
 
+The bootloader now prints simple debug messages during startup so you can observe each stage of the boot process. These messages show when the kernel and root filesystem are loaded and report any disk errors before halting.
+
 ## Building
 
 1. Install `nasm` and `genisoimage`.
