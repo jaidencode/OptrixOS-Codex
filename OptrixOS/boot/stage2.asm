@@ -19,7 +19,13 @@ stage2_start:
     mov ss, ax
     mov sp, 0x7E00
 
+    mov si, stage2_banner
+    call print
+
     mov [boot_drive], dl
+
+    mov si, load_kernel_msg
+    call print
 
     ; load kernel
     mov bx, KERNEL_LOAD_ADDR
@@ -31,6 +37,9 @@ stage2_start:
     mov cl, KERNEL_START_SECTOR
     int 0x13
     jc disk_error
+
+    mov si, jump_kernel_msg
+    call print
 
     mov dl, [boot_drive]
     jmp 0x0000:KERNEL_LOAD_ADDR
@@ -53,3 +62,6 @@ print:
 
 boot_drive db 0
 err_msg db 'Stage2 error',0
+stage2_banner db 'Stage2 start',13,10,0
+load_kernel_msg db 'Loading kernel...',13,10,0
+jump_kernel_msg db 'Jumping to kernel',13,10,13,10,0
