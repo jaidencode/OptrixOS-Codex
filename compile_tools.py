@@ -4,6 +4,7 @@ TOOLCHAIN_DIR = os.environ.get("TOOLCHAIN_DIR") or r"C:\\Users\\jaide\\Downloads
 CC = os.environ.get("CC") or os.path.join(TOOLCHAIN_DIR, "i686-elf-gcc.exe")
 LD = os.environ.get("LD") or os.path.join(TOOLCHAIN_DIR, "i686-elf-ld.exe")
 OBJDUMP = os.environ.get("OBJDUMP") or os.path.join(TOOLCHAIN_DIR, "i686-elf-objdump.exe")
+OBJCOPY = os.environ.get("OBJCOPY") or os.path.join(TOOLCHAIN_DIR, "i686-elf-objcopy.exe")
 NASM = "nasm"
 
 if not os.path.isfile(CC):
@@ -19,6 +20,8 @@ if not shutil.which(LD):
     LD = "ld"
 if not shutil.which(OBJDUMP):
     OBJDUMP = "objdump"
+if not shutil.which(OBJCOPY):
+    OBJCOPY = "objcopy"
 
 CDRTOOLS_DIR = os.environ.get("CDRTOOLS_DIR") or r"C:\\Program Files (x86)\\cdrtools"
 MKISOFS_EXE = os.environ.get("MKISOFS") or os.path.join(CDRTOOLS_DIR, "mkisofs.exe")
@@ -59,9 +62,10 @@ def compile_kernel():
     run([CC, '-m32', '-ffreestanding', '-O2', '-c', 'src/fs/ext2.c', '-o', 'build/ext2.o'])
     run([CC, '-m32', '-ffreestanding', '-O2', '-c', 'src/fs/fat32.c', '-o', 'build/fat32.o'])
     run([CC, '-m32', '-ffreestanding', '-O2', '-c', 'src/fs/ntfs.c', '-o', 'build/ntfs.o'])
-    run([LD, '-m', 'elf_i386', '-T', 'linker.ld', '-o', 'build/kernel.bin',
+    run([LD, '-m', 'elf_i386', '-T', 'linker.ld', '-o', 'build/kernel.elf',
          'build/boot.o', 'build/kernel.o', 'build/shell.o', 'build/string.o',
          'build/vfs.o', 'build/ext2.o', 'build/fat32.o', 'build/ntfs.o'])
+    run([OBJCOPY, '-O', 'binary', 'build/kernel.elf', 'build/kernel.bin'])
 
 def compile_bootloader(kernel_sectors, rootfs_sectors, rootfs_size):
     args = [NASM, '-f', 'bin',

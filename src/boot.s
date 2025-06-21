@@ -4,6 +4,7 @@ extern kernel_main
     global _start
 _start:
     cli
+    cld
     mov esp, stack_top
     push edi
     push esi
